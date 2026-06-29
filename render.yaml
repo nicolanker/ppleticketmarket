@@ -1,0 +1,41 @@
+# Render Blueprint — deploys the market + a managed Postgres database.
+# In Render: New + → Blueprint → connect this repo. Render reads this file,
+# creates both services, and wires DATABASE_URL automatically.
+# Docs: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: pple-market-db
+    plan: free            # free Postgres (note: expires ~90 days; upgrade for prod)
+    databaseName: pple_market
+    user: pple
+
+services:
+  - type: web
+    name: pple-ticket-market
+    runtime: python
+    plan: free            # free web service (sleeps after ~15 min idle)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL          # injected from the database above
+        fromDatabase:
+          name: pple-market-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD        # set a real value in the dashboard
+        generateValue: true        # Render generates a strong random password
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_FROM
+        value: PPLE Ticket Market <onboarding@resend.dev>
+      - key: RESEND_API_KEY        # paste your key in the dashboard (kept secret)
+        sync: false
+      - key: MAX_QUANTITY
+        value: "5"
+      # Optional: lock to university domains
+      # - key: ALLOWED_EMAIL_DOMAINS
+      #   value: uva.nl,student.uva.nl

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · PPLE Ticket Market</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" style="background:linear-gradient(135deg,#ea3943,#7b5cff)">⚙</span>
+      <div>
+        <h1>Admin Console</h1>
+        <p class="tagline">PPLE Graduation Ticket Market</p>
+      </div>
+    </div>
+    <div class="ticker">
+      <a class="conn online" href="/" style="text-decoration:none;color:var(--accent)">← back to market</a>
+    </div>
+  </header>
+
+  <main style="max-width:1200px;margin:0 auto;padding:22px 28px;display:flex;flex-direction:column;gap:18px;">
+    <section class="card">
+      <h2>Market statistics</h2>
+      <div id="stats" class="stats-grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>All orders</h2>
+      <div class="admin-head">
+        <span>ID</span><span>Side</span><span>Email</span><span>Filled</span><span>Qty</span><span>Price €</span><span>Status</span><span></span>
+      </div>
+      <div id="orders" class="orders-list"></div>
+    </section>
+  </main>
+
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .stat { background: var(--card-2); border: 1px solid var(--border); border-radius: 11px; padding: 14px 16px; }
+    .stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stat .v { font-size: 22px; font-weight: 700; margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+    .admin-head, .admin-row { display: grid; grid-template-columns: 50px 60px 1fr 60px 44px 80px 80px 90px; gap: 10px; align-items: center; }
+    .admin-head { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+    .admin-row { padding: 8px 4px; font-size: 13px; border-bottom: 1px solid rgba(31,42,61,.5); font-family: 'JetBrains Mono', monospace; }
+    .admin-row .email { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .status { font-size: 11px; padding: 2px 8px; border-radius: 6px; text-align: center; text-transform: uppercase; }
+    .status.open { background: rgba(79,140,255,.15); color: var(--accent); }
+    .status.partial { background: rgba(255,193,7,.15); color: #ffc107; }
+    .status.filled { background: var(--buy-dim); color: var(--buy); }
+    .status.cancelled { background: rgba(138,152,173,.15); color: var(--muted); }
+    .cancel-btn { background: var(--sell-dim); color: var(--sell); border: 1px solid var(--sell); border-radius: 7px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .cancel-btn:hover { filter: brightness(1.15); }
+    .cancel-btn:disabled { opacity: .3; cursor: not-allowed; }
+  </style>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>
