@@ -161,6 +161,26 @@ class ExchangeService:
             db.commit()
             return True
 
+    async def reset_market(self) -> dict:
+        """Wipe ALL orders and trades and clear the live book — a clean slate.
+
+        Destructive and irreversible; admin-only. Used to launch a fresh market.
+        """
+        async with self._lock:
+            result = await asyncio.to_thread(self._reset_sync)
+        await self.broadcast_snapshot()
+        logger.info("Market reset: %s", result)
+        return result
+
+    def _reset_sync(self) -> dict:
+        with SessionLocal() as db:
+            # Delete trades first (they reference orders via foreign key).
+            deleted_trades = db.query(models.Trade).delete()
+            deleted_orders = db.query(models.Order).delete()
+            db.commit()
+        self.book = OrderBook()  # empty the in-memory book
+        return {"deleted_orders": deleted_orders, "deleted_trades": deleted_trades}
+
     # -- queries / snapshot ---------------------------------------------------
 
     def build_snapshot(self) -> Snapshot:

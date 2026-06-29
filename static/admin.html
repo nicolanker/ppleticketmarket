@@ -27,6 +27,16 @@
       <div id="stats" class="stats-grid"></div>
     </section>
 
+    <section class="card danger-card">
+      <div class="danger-row">
+        <div>
+          <h2 style="margin:0 0 4px;color:var(--sell)">Reset market</h2>
+          <p class="danger-note">Permanently deletes <strong>all orders and trades</strong> and empties the book. Use this once before sending the link out. This cannot be undone.</p>
+        </div>
+        <button id="reset-btn" class="reset-btn">Reset market</button>
+      </div>
+    </section>
+
     <section class="card">
       <h2>All orders</h2>
       <div class="admin-head">
@@ -53,6 +63,12 @@
     .cancel-btn { background: var(--sell-dim); color: var(--sell); border: 1px solid var(--sell); border-radius: 7px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
     .cancel-btn:hover { filter: brightness(1.15); }
     .cancel-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .danger-card { border-color: rgba(234,57,67,.4); }
+    .danger-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .danger-note { font-size: 12px; color: var(--muted); max-width: 560px; line-height: 1.5; }
+    .reset-btn { background: var(--sell); color: #fff; border: none; border-radius: 9px; padding: 11px 18px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .reset-btn:hover { filter: brightness(1.1); }
+    .reset-btn:disabled { opacity: .5; cursor: not-allowed; }
   </style>
 
   <script src="/static/js/admin.js"></script>

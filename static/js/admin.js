@@ -74,8 +74,33 @@
     } catch (_) { /* handled in api() */ }
   }
 
+  function initResetButton() {
+    const btn = document.getElementById("reset-btn");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete ALL orders and trades and empty the book? This cannot be undone.")) return;
+      const typed = prompt('Type RESET to confirm a full market wipe:');
+      if (typed !== "RESET") { alert("Cancelled — nothing was deleted."); return; }
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = "Resetting…";
+      try {
+        const r = await api("/api/admin/reset", { method: "POST" });
+        if (r.ok) {
+          const d = await r.json();
+          alert(`Market reset. Removed ${d.deleted_orders} orders and ${d.deleted_trades} trades.`);
+          refresh();
+        } else {
+          alert("Reset failed.");
+        }
+      } catch (_) { /* handled in api() */ }
+      finally { btn.disabled = false; btn.textContent = original; }
+    });
+  }
+
   window.addEventListener("DOMContentLoaded", () => {
     refresh();
+    initResetButton();
     setInterval(refresh, 4000);
   });
 })();

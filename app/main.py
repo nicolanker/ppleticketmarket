@@ -113,6 +113,12 @@ async def admin_cancel_order(order_id: int, _: str = Depends(require_admin)) -> 
     return {"cancelled": order_id}
 
 
+@app.post("/api/admin/reset")
+async def admin_reset(_: str = Depends(require_admin)) -> dict:
+    """Wipe all orders and trades — launch a fresh market. Irreversible."""
+    return await exchange.reset_market()
+
+
 @app.get("/api/admin/stats")
 def admin_stats(_: str = Depends(require_admin)) -> dict:
     """Aggregate market statistics for the admin dashboard."""
