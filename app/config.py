@@ -45,7 +45,9 @@ ALLOWED_EMAIL_DOMAINS: list[str] = [
 # -- Email delivery -----------------------------------------------------------
 # Provider: "console" (log only, the default), "smtp", or "resend".
 EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "console").strip().lower()
-EMAIL_FROM: str = os.getenv("EMAIL_FROM", "PPLE Ticket Market <market@example.com>")
+# Must be an address on a domain verified in Resend, or Resend stays in
+# "testing mode" and only delivers to the account owner's own address.
+EMAIL_FROM: str = os.getenv("EMAIL_FROM", "PPLE Ticket Market <market@ppleinvestment.club>")
 
 SMTP_HOST: str = os.getenv("SMTP_HOST", "")
 SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
