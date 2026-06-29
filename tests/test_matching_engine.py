@@ -130,30 +130,30 @@ def test_cancel_removes_resting_order():
     assert book.cancel(999) is None  # unknown id
 
 
-def test_self_trade_prevention():
-    """A trader's order never matches their own resting order."""
+def test_book_never_left_crossed():
+    """Any crossing pair trades immediately, so the book is never left crossed
+    (bid >= ask) and the spread can never go negative."""
     book = OrderBook()
-    sell(book, 1, 2, 50.0, email="me@uva.nl")
-    # Same person sends a crossing buy — must NOT self-trade; it rests instead.
-    trades = buy(book, 2, 2, 50.0, email="me@uva.nl")
-
-    assert trades == []
-    assert book.best_bid() == 5000 and book.best_ask() == 5000  # both rest
-    assert len(book.open_orders()) == 2
-
-
-def test_self_trade_skips_to_other_trader():
-    """Own order is skipped; a different trader's order fills instead."""
-    book = OrderBook()
-    sell(book, 1, 1, 50.0, email="me@uva.nl")     # own, best price — skipped
-    sell(book, 2, 1, 51.0, email="other@uva.nl")  # someone else, worse price
-    trades = buy(book, 3, 1, 51.0, email="me@uva.nl")
+    buy(book, 1, 1, 21.50)                 # rests as best bid
+    trades = sell(book, 2, 1, 19.00)       # crosses the bid -> must trade now
 
     assert len(trades) == 1
-    assert trades[0].sell_order_id == 2            # matched the other trader
-    assert trades[0].price_cents == 5100
-    # Own resting sell at 50 is untouched.
-    assert book.best_ask() == 5000
+    assert trades[0].price_cents == 2150   # executes at the resting bid's price
+    bid, ask = book.best_bid(), book.best_ask()
+    assert bid is None or ask is None or bid < ask  # never crossed
+
+
+def test_same_trader_can_cross():
+    """Even the same email crosses (no self-trade prevention) — correctness of
+    the book takes priority over preventing self-matches."""
+    book = OrderBook()
+    buy(book, 1, 1, 21.50, email="me@uva.nl")
+    trades = sell(book, 2, 1, 19.00, email="me@uva.nl")
+
+    assert len(trades) == 1
+    assert trades[0].buyer_email == "me@uva.nl"
+    assert trades[0].seller_email == "me@uva.nl"
+    assert book.best_bid() is None and book.best_ask() is None
 
 
 def test_load_preserves_time_priority():

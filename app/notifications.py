@@ -75,12 +75,20 @@ def _send_resend(to: str, subject: str, body: str) -> None:
 
 
 def _send(to: str, subject: str, body: str) -> None:
-    """Synchronous dispatch to the configured provider; never raises upward."""
+    """Synchronous dispatch to whichever backend is actually configured.
+
+    Resolution is by *available credentials*, not just EMAIL_PROVIDER, so a
+    missing/mis-set EMAIL_PROVIDER never silently disables email: if a Resend
+    key is present we send via Resend; if SMTP is configured we use that.
+    Never raises upward — delivery failures must not break matching.
+    """
     try:
         if config.EMAIL_PROVIDER == "smtp" and config.SMTP_HOST:
             _send_smtp(to, subject, body)
-        elif config.EMAIL_PROVIDER == "resend" and config.RESEND_API_KEY:
+        elif config.RESEND_API_KEY:
             _send_resend(to, subject, body)
+        elif config.SMTP_HOST:
+            _send_smtp(to, subject, body)
         else:
             logger.info("[email:console] To: %s | %s\n%s", to, subject, body)
             return
