@@ -64,16 +64,36 @@ See `.env.example`. Key knobs: `DATABASE_URL`, `ADMIN_PASSWORD`,
 If `EMAIL_PROVIDER=resend` but no key is set, trade emails harmlessly fall back
 to console logging — matching never breaks because of email problems.
 
-## Hosting
-This app needs a real **ASGI** process and persistent **WebSocket** connections.
-- ❌ **PythonAnywhere** — WSGI-only; no ASGI/WebSocket support. Not a fit.
-- ✅ **Render / Railway / Fly.io** — run `uvicorn app.main:app`, support
-  WebSockets, and offer a managed Postgres add-on. Set `DATABASE_URL`,
-  `ADMIN_PASSWORD`, and `RESEND_API_KEY` as environment variables. Use Resend
-  (HTTPS) for email since these hosts block outbound SMTP ports.
-- ✅ **A small VPS** (Fly/Hetzner/DigitalOcean) behind nginx for full control.
+## Hosting (deploy live)
+This app needs a real **ASGI** process and persistent **WebSocket** connections,
+so WSGI-only hosts like **PythonAnywhere won't work**. Use Render (easiest),
+Railway, Fly.io, or a VPS. A ready-to-use Render blueprint (`render.yaml`) and a
+`Procfile` are included.
 
-Start command for any of them:
-```
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
+### Deploy on Render (recommended, free tier)
+1. **Push to GitHub** (one-time):
+   ```bash
+   gh repo create pple-ticket-market --private --source . --push
+   # or: create an empty repo on github.com, then
+   #   git remote add origin https://github.com/<you>/pple-ticket-market.git
+   #   git push -u origin main
+   ```
+2. On <https://render.com>: **New + → Blueprint**, connect the repo. Render reads
+   `render.yaml` and creates the web service **and** a Postgres database, wiring
+   `DATABASE_URL` automatically.
+3. In the service's **Environment**, set `RESEND_API_KEY` (and change
+   `ADMIN_PASSWORD` if you don't want the auto-generated one).
+4. Deploy. Your market is live at `https://pple-ticket-market.onrender.com`.
+
+Tables are created automatically on first boot — no migration step.
+
+**Free-tier caveats:** the web service sleeps after ~15 min idle (≈30 s cold
+start, and WebSocket clients reconnect on wake); free Postgres expires after
+~90 days. Upgrade either to a paid plan for always-on production use.
+
+### Other hosts
+- **Railway** — `railway up`; add a Postgres plugin; it uses the `Procfile`.
+- **Fly.io** — `fly launch` (add a Dockerfile or use the Python buildpack) + `fly postgres create`.
+- **VPS** — run uvicorn behind nginx with TLS; point `DATABASE_URL` at your Postgres.
+
+Start command (all hosts): `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
