@@ -139,12 +139,10 @@ class OrderBook:
     def _match(self, incoming: Order, opposite: Dict[int, Deque[Order]], take_best, crosses) -> List[Trade]:
         """Walk the opposite side of the book filling ``incoming`` while it crosses."""
         trades: List[Trade] = []
-        while incoming.remaining > 0 and opposite:
-            best_price = take_best(opposite)
-            if not crosses(best_price):
+        while incoming.remaining > 0:
+            resting = self._best_counterparty(incoming, opposite, take_best, crosses)
+            if resting is None:
                 break
-            level = opposite[best_price]
-            resting = level[0]
             qty = min(incoming.remaining, resting.remaining)
 
             if incoming.side == Side.BUY:
@@ -167,10 +165,28 @@ class OrderBook:
             incoming.remaining -= qty
             resting.remaining -= qty
             if resting.remaining == 0:
-                level.popleft()
+                level = opposite[resting.price_cents]
+                level.remove(resting)
                 if not level:
-                    del opposite[best_price]
+                    del opposite[resting.price_cents]
         return trades
+
+    @staticmethod
+    def _best_counterparty(incoming: Order, opposite: Dict[int, Deque[Order]], take_best, crosses) -> Optional[Order]:
+        """Best crossing resting order that isn't the trader's own (self-trade prevention).
+
+        Scans price levels best-first; within a level, earliest-first (time
+        priority). Orders owned by the same email are skipped so a trader can
+        never match against themselves — their orders simply keep resting.
+        """
+        best_first = sorted(opposite.keys(), reverse=(take_best is max))
+        for price in best_first:
+            if not crosses(price):
+                break  # levels are best-first; nothing further can cross
+            for resting in opposite[price]:
+                if resting.email != incoming.email:
+                    return resting
+        return None
 
     def cancel(self, order_id: int) -> Optional[Order]:
         """Remove a resting order by id. Returns the order if found."""

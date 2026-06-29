@@ -107,6 +107,13 @@ input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px 
 .submit-btn:active { transform: translateY(1px); }
 .submit-btn:disabled { opacity: .6; cursor: not-allowed; }
 
+.how { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.how h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+.how ol { margin: 0 0 12px; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
+.how li { font-size: 12.5px; color: var(--text); line-height: 1.45; }
+.how li::marker { color: var(--accent); font-weight: 700; }
+.how .privacy { font-size: 12px; color: var(--muted); line-height: 1.45; background: var(--card-2); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
+
 .form-msg { font-size: 12px; min-height: 16px; }
 .form-msg.error { color: var(--sell); }
 .form-msg.success { color: var(--buy); }

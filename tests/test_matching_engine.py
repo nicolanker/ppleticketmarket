@@ -130,6 +130,32 @@ def test_cancel_removes_resting_order():
     assert book.cancel(999) is None  # unknown id
 
 
+def test_self_trade_prevention():
+    """A trader's order never matches their own resting order."""
+    book = OrderBook()
+    sell(book, 1, 2, 50.0, email="me@uva.nl")
+    # Same person sends a crossing buy — must NOT self-trade; it rests instead.
+    trades = buy(book, 2, 2, 50.0, email="me@uva.nl")
+
+    assert trades == []
+    assert book.best_bid() == 5000 and book.best_ask() == 5000  # both rest
+    assert len(book.open_orders()) == 2
+
+
+def test_self_trade_skips_to_other_trader():
+    """Own order is skipped; a different trader's order fills instead."""
+    book = OrderBook()
+    sell(book, 1, 1, 50.0, email="me@uva.nl")     # own, best price — skipped
+    sell(book, 2, 1, 51.0, email="other@uva.nl")  # someone else, worse price
+    trades = buy(book, 3, 1, 51.0, email="me@uva.nl")
+
+    assert len(trades) == 1
+    assert trades[0].sell_order_id == 2            # matched the other trader
+    assert trades[0].price_cents == 5100
+    # Own resting sell at 50 is untouched.
+    assert book.best_ask() == 5000
+
+
 def test_load_preserves_time_priority():
     """Rebuilding from persisted orders keeps sequence-based time priority."""
     src = OrderBook()
