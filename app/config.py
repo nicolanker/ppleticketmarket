@@ -56,3 +56,10 @@ SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
 SMTP_USE_TLS: bool = _bool("SMTP_USE_TLS", True)
 
 RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+
+# -- Keep-alive (free-tier anti-sleep) ----------------------------------------
+# Set KEEP_ALIVE_URL to the deployed site's public URL to have the app ping
+# itself periodically so a free host (e.g. Render) never idles into sleep.
+# Leave empty to disable. Interval should be under the host's idle window.
+KEEP_ALIVE_URL: str = os.getenv("KEEP_ALIVE_URL", "")
+KEEP_ALIVE_INTERVAL: int = int(os.getenv("KEEP_ALIVE_INTERVAL", "600"))  # seconds

@@ -36,6 +36,9 @@ services:
         sync: false
       - key: MAX_QUANTITY
         value: "5"
+      # Keep-alive: set this to your live URL to stop the free instance sleeping.
+      # - key: KEEP_ALIVE_URL
+      #   value: https://your-site.onrender.com/health
       # Optional: lock to university domains
       # - key: ALLOWED_EMAIL_DOMAINS
       #   value: uva.nl,student.uva.nl

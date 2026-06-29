@@ -6,11 +6,13 @@ The web layer is deliberately thin — all market logic lives in
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -28,12 +30,34 @@ logger = logging.getLogger("market")
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 
+async def _keep_alive() -> None:
+    """Periodically ping our own public URL so a free host never idles to sleep.
+
+    Enabled only when KEEP_ALIVE_URL is set (to the deployed site's URL). The
+    request comes back in as inbound traffic, resetting the host's idle timer.
+    """
+    while True:
+        await asyncio.sleep(config.KEEP_ALIVE_INTERVAL)
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.get(config.KEEP_ALIVE_URL)
+            logger.info("keep-alive ping ok")
+        except Exception:
+            logger.warning("keep-alive ping failed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     exchange.rebuild_from_db()
+    keep_alive_task = None
+    if config.KEEP_ALIVE_URL:
+        keep_alive_task = asyncio.create_task(_keep_alive())
+        logger.info("Keep-alive enabled: pinging %s every %ss", config.KEEP_ALIVE_URL, config.KEEP_ALIVE_INTERVAL)
     logger.info("PPLE Graduation Ticket Market started.")
     yield
+    if keep_alive_task:
+        keep_alive_task.cancel()
 
 
 app = FastAPI(title="PPLE Graduation Ticket Market", version="1.0.0", lifespan=lifespan)
@@ -51,6 +75,12 @@ async def create_order(payload: OrderCreate) -> OrderResponse:
         order=exchange._public_order_out(db_order),
         trades=[exchange._trade_out(t) for t in db_trades],
     )
+
+
+@app.get("/health")
+def health() -> dict:
+    """Lightweight liveness probe for uptime monitors / keep-alive pings."""
+    return {"status": "ok"}
 
 
 @app.get("/api/snapshot", response_model=Snapshot)
