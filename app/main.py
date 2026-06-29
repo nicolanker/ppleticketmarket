@@ -77,9 +77,13 @@ async def create_order(payload: OrderCreate) -> OrderResponse:
     )
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health() -> dict:
-    """Lightweight liveness probe for uptime monitors / keep-alive pings."""
+    """Lightweight liveness probe for uptime monitors / keep-alive pings.
+
+    Accepts HEAD as well as GET because uptime monitors (e.g. UptimeRobot)
+    default to HEAD requests, which would otherwise 405.
+    """
     return {"status": "ok"}
 
 
