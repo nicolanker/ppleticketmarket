@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPLE Best Thesis — Prediction Market</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <style>
+    .predict-grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; padding: 22px 28px; max-width: 1300px; margin: 0 auto; }
+    .wallet-bar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .wallet-bar input { min-width: 230px; }
+    .wallet-stat { display: flex; flex-direction: column; gap: 2px; }
+    .wallet-stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .wallet-stat .v { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    .resolved-banner { background: var(--buy-dim); border: 1px solid var(--buy); color: var(--buy); border-radius: 11px; padding: 12px 16px; font-weight: 600; margin-bottom: 16px; }
+
+    .noms { display: flex; flex-direction: column; gap: 10px; }
+    .nom { background: var(--card-2); border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px; transition: border .15s; }
+    .nom:hover { border-color: #2b3a55; }
+    .nom-head { display: flex; align-items: baseline; gap: 10px; }
+    .rank { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; width: 26px; }
+    .nom-name { font-weight: 600; font-size: 15px; flex: 1; }
+    .nom-prob { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: var(--accent); }
+    .bar { height: 7px; background: rgba(79,140,255,.12); border-radius: 5px; margin: 9px 0; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #7b5cff); border-radius: 5px; transition: width .4s ease; }
+    .nom-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .you { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; min-width: 78px; }
+    .trade { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .trade .qty { width: 70px; padding: 7px 8px; font-size: 13px; }
+    .trade button { border: none; border-radius: 8px; padding: 8px 13px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+    .trade .buy { background: var(--buy); color: #04130c; }
+    .trade .sell { background: var(--sell-dim); color: var(--sell); border: 1px solid var(--sell); }
+    .trade button:hover { filter: brightness(1.08); }
+    .quote { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; flex-basis: 100%; min-height: 14px; }
+
+    .holding-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid rgba(31,42,61,.5); align-items: center; }
+    .holding-row .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .holding-row .h-sh { font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+    .holding-row .h-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .lb-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid rgba(31,42,61,.5); font-family: 'JetBrains Mono', monospace; }
+    .lb-row .lb-net { font-weight: 700; }
+    .msg { font-size: 12px; min-height: 15px; margin-top: 8px; }
+    .msg.error { color: var(--sell); } .msg.success { color: var(--buy); }
+
+    .admin-toggle { color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .admin-box { display: none; margin-top: 14px; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .admin-box.show { display: flex; }
+    .admin-box select, .admin-box input { padding: 8px; }
+    .admin-box button { border: none; border-radius: 8px; padding: 8px 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    @media (max-width: 860px) {
+      .predict-grid { grid-template-columns: 1fr; padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🏆</span>
+      <div>
+        <h1>PPLE Best Thesis — Prediction Market</h1>
+        <p class="tagline">play money · live odds (LMSR) · <span id="conn-text">connecting…</span></p>
+      </div>
+    </div>
+    <div class="wallet-bar">
+      <div class="wallet-stat"><span class="k">Balance</span><span class="v" id="w-balance">—</span></div>
+      <div class="wallet-stat"><span class="k">Net worth</span><span class="v" id="w-net">—</span></div>
+    </div>
+  </header>
+
+  <main class="predict-grid">
+    <section>
+      <div id="resolved-banner"></div>
+      <div class="card" style="margin-bottom:16px;">
+        <h2>Your trader</h2>
+        <div class="wallet-bar">
+          <input type="email" id="email" placeholder="you@student.uva.nl" autocomplete="email" />
+          <button class="submit-btn buy" style="padding:11px 18px;width:auto;" id="enter-btn">Enter market</button>
+        </div>
+        <p class="msg" id="msg"></p>
+      </div>
+
+      <div class="card">
+        <h2>Nominees — implied probability of winning</h2>
+        <div id="noms" class="noms"></div>
+      </div>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <h2>Your portfolio</h2>
+        <div id="holdings"><p class="empty">Enter your email to start.</p></div>
+      </div>
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <div id="leaderboard"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    Play money only · 1 winning share pays 100 pts · prices seeded at 1/N and set by an LMSR maker ·
+    <span class="admin-toggle" id="admin-toggle">admin</span>
+    <div class="admin-box" id="admin-box">
+      <input type="password" id="admin-pass" placeholder="admin password" />
+      <select id="admin-winner"></select>
+      <button class="submit-btn buy" id="admin-resolve" style="width:auto;padding:8px 12px;">Declare winner</button>
+      <button class="cancel-btn" id="admin-reset" style="background:var(--sell-dim);color:var(--sell);border:1px solid var(--sell);border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;">Reset market</button>
+    </div>
+  </footer>
+
+  <script src="/static/js/predict.js"></script>
+</body>
+</html>

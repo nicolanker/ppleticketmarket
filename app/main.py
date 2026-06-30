@@ -17,8 +17,9 @@ from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, EmailStr, Field
 
-from . import config, models
+from . import config, models, predict_service
 from .database import SessionLocal, init_db
 from .models import OrderStatus
 from .schemas import OrderCreate, OrderOut, OrderResponse, Snapshot
@@ -50,6 +51,7 @@ async def _keep_alive() -> None:
 async def lifespan(app: FastAPI):
     init_db()
     exchange.rebuild_from_db()
+    predict_service.ensure_seeded()
     keep_alive_task = None
     if config.KEEP_ALIVE_URL:
         keep_alive_task = asyncio.create_task(_keep_alive())
@@ -173,6 +175,58 @@ def admin_stats(_: str = Depends(require_admin)) -> dict:
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Prediction market (play-money LMSR) — self-contained, not linked from the
+# ticket market.
+# ---------------------------------------------------------------------------
+
+
+class PredictTradeIn(BaseModel):
+    email: EmailStr
+    outcome_id: int
+    shares: float = Field(..., description="Positive = buy, negative = sell")
+
+
+class PredictResolveIn(BaseModel):
+    winner_outcome_id: int
+
+
+@app.get("/api/predict/state")
+def predict_state() -> dict:
+    return predict_service.get_state()
+
+
+@app.get("/api/predict/portfolio")
+def predict_portfolio(email: EmailStr) -> dict:
+    return predict_service.get_portfolio(str(email))
+
+
+@app.post("/api/predict/trade")
+def predict_trade(payload: PredictTradeIn) -> dict:
+    try:
+        return predict_service.trade(str(payload.email), payload.outcome_id, payload.shares)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/predict/admin/resolve")
+def predict_resolve(payload: PredictResolveIn, _: str = Depends(require_admin)) -> dict:
+    try:
+        return predict_service.resolve(payload.winner_outcome_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/predict/admin/reset")
+def predict_reset(_: str = Depends(require_admin)) -> dict:
+    return predict_service.reset()
+
+
+@app.get("/predict", response_class=HTMLResponse)
+def predict_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "predict.html")
 
 
 @app.get("/", response_class=HTMLResponse)

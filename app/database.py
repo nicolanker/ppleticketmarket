@@ -27,6 +27,6 @@ class Base(DeclarativeBase):
 
 def init_db() -> None:
     """Create all tables. Import models first so they register with ``Base``."""
-    from . import models  # noqa: F401  (registers models with Base.metadata)
+    from . import models, predict_models  # noqa: F401  (registers tables with Base.metadata)
 
     Base.metadata.create_all(bind=engine)
