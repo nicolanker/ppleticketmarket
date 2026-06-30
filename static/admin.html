@@ -69,6 +69,14 @@
     .reset-btn { background: var(--sell); color: #fff; border: none; border-radius: 9px; padding: 11px 18px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
     .reset-btn:hover { filter: brightness(1.1); }
     .reset-btn:disabled { opacity: .5; cursor: not-allowed; }
+    @media (max-width: 760px) {
+      main { padding: 14px !important; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      #orders { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .admin-head, .admin-row { min-width: 640px; }
+      .danger-row { flex-direction: column; align-items: stretch; }
+      .reset-btn { width: 100%; }
+    }
   </style>
 
   <script src="/static/js/admin.js"></script>

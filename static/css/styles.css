@@ -213,8 +213,50 @@ input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px 
 @media (max-width: 1080px) {
   .grid { grid-template-columns: 1fr 1fr; grid-template-areas: "form form" "book chart" "trades orders"; }
 }
-@media (max-width: 720px) {
-  .grid { grid-template-columns: 1fr; grid-template-areas: "form" "book" "chart" "trades" "orders"; padding: 16px; }
-  .topbar { padding: 14px 16px; }
-  .ticker { gap: 14px; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 760px) {
+  /* Stack everything in one column */
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "form" "book" "chart" "trades" "orders";
+    gap: 14px; padding: 14px;
+  }
+
+  /* Topbar: brand on top, stats become a horizontal scroll strip */
+  .topbar { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 14px; }
+  .brand { gap: 11px; }
+  .logo { width: 36px; height: 36px; font-size: 17px; border-radius: 9px; }
+  .topbar h1 { font-size: 16px; }
+  .tagline { font-size: 11px; }
+  .ticker {
+    gap: 18px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ticker::-webkit-scrollbar { height: 0; }
+  .ticker-item { flex: 0 0 auto; }
+  .ticker-value { font-size: 14px; }
+  .conn { flex: 0 0 auto; margin-left: auto; padding-left: 6px; }
+
+  /* Cards */
+  .card { padding: 15px; }
+  .card h2 { margin-bottom: 12px; }
+
+  /* Form: bigger touch targets; 16px inputs stop iOS zooming on focus */
+  input { font-size: 16px; padding: 12px; }
+  .side-btn { padding: 13px; font-size: 15px; }
+  .submit-btn { padding: 15px; font-size: 16px; }
+
+  /* Shorter chart on phones */
+  .chart-wrap { height: 200px; }
+
+  /* Order book + lists: a touch more compact, taller scroll area */
+  .lvl { padding: 8px 10px; font-size: 13px; }
+  .book-cols, .book-mid { padding-left: 10px; padding-right: 10px; }
+  .book-section, .trades-list, .orders-list { max-height: 280px; }
+
+  /* Open orders columns fit comfortably (the "Order" cell is just #id) */
+  .orders-head, .order-row { grid-template-columns: 48px 1fr 52px 36px auto; gap: 8px; font-size: 12px; }
+
+  .footer { padding: 18px 14px; font-size: 11px; }
 }
