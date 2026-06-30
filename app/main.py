@@ -203,6 +203,11 @@ def predict_portfolio(email: EmailStr) -> dict:
     return predict_service.get_portfolio(str(email))
 
 
+@app.get("/api/predict/history")
+def predict_history() -> dict:
+    return predict_service.get_history()
+
+
 @app.post("/api/predict/trade")
 def predict_trade(payload: PredictTradeIn) -> dict:
     try:

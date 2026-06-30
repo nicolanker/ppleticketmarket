@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import threading
+from datetime import datetime, timezone
 
 from .database import SessionLocal
 from .lmsr import cost_to_trade, prices
@@ -106,6 +107,36 @@ def get_state() -> dict:
             "start_balance": START_BALANCE,
             "outcomes": outcomes,
             "leaderboard": leaderboard[:10],
+        }
+
+
+def get_history(max_points: int = 500) -> dict:
+    """Reconstruct every candidate's probability over time from the trade log.
+
+    Replays trades in order, recomputing the full LMSR price vector after each,
+    so the frontend can plot any candidate's history (e.g. the current top 5).
+    Begins from the uniform 1/N baseline.
+    """
+    with SessionLocal() as db:
+        outs = _outcomes(db)
+        idx_by_id = {o.id: i for i, o in enumerate(outs)}
+        q = [0.0] * len(outs)
+
+        points = [{"t": None, "probs": prices(q, B)}]  # baseline (uniform 1/N)
+        for t in db.query(PredictTrade).order_by(PredictTrade.id).all():
+            q[idx_by_id[t.outcome_id]] += t.shares
+            ts = t.created_at.isoformat() if t.created_at else datetime.now(timezone.utc).isoformat()
+            points.append({"t": ts, "probs": prices(q, B)})
+
+        if len(points) > max_points:  # downsample, always keeping the last point
+            step = len(points) / max_points
+            sampled = [points[int(i * step)] for i in range(max_points)]
+            sampled[-1] = points[-1]
+            points = sampled
+
+        return {
+            "outcomes": [{"id": o.id, "name": o.name} for o in outs],
+            "points": points,
         }
 
 
