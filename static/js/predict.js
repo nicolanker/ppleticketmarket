@@ -14,7 +14,6 @@
   let state = null;       // /api/predict/state
   let history = null;     // /api/predict/history
   let email = localStorage.getItem("predict_email") || "";
-  let adminPass = "";
   let chart = null;
   let myHoldings = {};
 
@@ -66,9 +65,21 @@
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
+  let lastChartSig = "";
   function updateChart() {
     if (!chart || !state || !history) return;
     const top = topFive();
+
+    // Only touch the chart when something actually changed — otherwise the
+    // poll would re-trigger the draw animation every few seconds (the bug).
+    const sig = JSON.stringify([
+      history.points.length,
+      top,
+      top.map((pos) => Math.round(state.outcomes[pos].prob * 1000)),
+    ]);
+    if (sig === lastChartSig) return;
+    lastChartSig = sig;
+
     chart.data.labels = history.points.map((p) => fmtTime(p.t));
     chart.data.datasets = top.map((pos, k) => ({
       label: state.outcomes[pos].name,
@@ -80,9 +91,8 @@
       pointHoverRadius: 4,
       tension: 0.25,
     }));
-    chart.update();
+    chart.update("none"); // redraw without the (janky) re-animation
 
-    // Custom legend with live percentages.
     $("legend").innerHTML = top
       .map(
         (pos, k) =>
@@ -205,7 +215,7 @@
       const rebuild = state === null || state.outcomes.length !== fresh.outcomes.length;
       state = fresh;
       $("conn-text").textContent = "live";
-      if (rebuild) { buildNoms(); fillAdminWinners(); }
+      if (rebuild) buildNoms();
       updateNoms();
       updateChart();
       renderLeaderboard();
@@ -245,31 +255,6 @@
     }
   }
 
-  /* ---- Admin ---- */
-  function fillAdminWinners() {
-    if (!state) return;
-    $("admin-winner").innerHTML = state.outcomes.map((o) => `<option value="${o.id}">${o.name}</option>`).join("");
-  }
-  const adminHeaders = () => ({ "Content-Type": "application/json", Authorization: "Basic " + btoa("admin:" + adminPass) });
-  function initAdmin() {
-    $("admin-toggle").addEventListener("click", () => $("admin-box").classList.toggle("show"));
-    $("admin-resolve").addEventListener("click", async () => {
-      adminPass = $("admin-pass").value;
-      const id = parseInt($("admin-winner").value, 10);
-      if (!confirm("Declare this nominee the winner and settle the market? This is final.")) return;
-      const r = await fetch("/api/predict/admin/resolve", { method: "POST", headers: adminHeaders(), body: JSON.stringify({ winner_outcome_id: id }) });
-      alert(r.ok ? "Market resolved." : "Failed (check password): " + (await r.text()));
-      loadState(); loadPortfolio();
-    });
-    $("admin-reset").addEventListener("click", async () => {
-      adminPass = $("admin-pass").value;
-      if (!confirm("Wipe ALL prediction-market data and re-seed nominees?")) return;
-      const r = await fetch("/api/predict/admin/reset", { method: "POST", headers: adminHeaders() });
-      alert(r.ok ? "Reset done." : "Failed (check password): " + (await r.text()));
-      state = null; loadState(); loadPortfolio();
-    });
-  }
-
   /* ---- Boot ---- */
   function initEmail() {
     if (email) $("email").value = email;
@@ -286,7 +271,6 @@
   window.addEventListener("DOMContentLoaded", () => {
     initChart();
     initEmail();
-    initAdmin();
     loadState().then(loadPortfolio);
     setInterval(() => { loadState(); loadPortfolio(); }, 2500);
   });

@@ -11,6 +11,8 @@ import os
 import threading
 from datetime import datetime, timezone
 
+from sqlalchemy import func
+
 from .database import SessionLocal
 from .lmsr import cost_to_trade, prices
 from .predict_models import (
@@ -137,6 +139,51 @@ def get_history(max_points: int = 500) -> dict:
         return {
             "outcomes": [{"id": o.id, "name": o.name} for o in outs],
             "points": points,
+        }
+
+
+def admin_overview() -> dict:
+    """Full admin view: market stats, nominees (with shares outstanding), traders."""
+    with SessionLocal() as db:
+        outs = _outcomes(db)
+        ps = prices([o.q for o in outs], B)
+        idx_by_id = {o.id: i for i, o in enumerate(outs)}
+        market = db.get(PredictMarket, 1)
+        resolved = bool(market and market.resolved)
+        winner = None
+        if resolved and market.winner_outcome_id:
+            w = db.get(PredictOutcome, market.winner_outcome_id)
+            winner = w.name if w else None
+
+        total_trades = db.query(PredictTrade).count()
+        total_volume = db.query(func.coalesce(func.sum(func.abs(PredictTrade.shares)), 0.0)).scalar() or 0.0
+
+        traders = []
+        users = db.query(PredictUser).all()
+        for u in users:
+            net = u.balance
+            if not resolved:
+                for h in db.query(PredictHolding).filter_by(email=u.email).all():
+                    net += h.shares * ps[idx_by_id[h.outcome_id]]
+            traders.append({"email": u.email, "balance": round(u.balance, 2), "net_worth": round(net, 2)})
+        traders.sort(key=lambda x: -x["net_worth"])
+
+        nominees = [
+            {"id": o.id, "name": o.name, "prob": ps[i], "shares": round(o.q, 1)}
+            for i, o in enumerate(outs)
+        ]
+        nominees.sort(key=lambda x: -x["prob"])
+
+        return {
+            "resolved": resolved,
+            "winner": winner,
+            "b": B,
+            "start_balance": START_BALANCE,
+            "total_trades": total_trades,
+            "total_volume": round(total_volume, 1),
+            "num_traders": len(users),
+            "nominees": nominees,
+            "traders": traders,
         }
 
 

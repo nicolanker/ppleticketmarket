@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prediction Market · Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <style>
+    .pa { max-width: 1200px; margin: 0 auto; padding: 22px 28px; display: flex; flex-direction: column; gap: 18px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .stat { background: var(--card-2); border: 1px solid var(--border); border-radius: 11px; padding: 14px 16px; }
+    .stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stat .v { font-size: 22px; font-weight: 700; margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+    .stat .v.win { color: var(--buy); font-size: 18px; }
+
+    .resolve-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .resolve-row select { flex: 1; min-width: 220px; padding: 11px; }
+    .resolve-row button { border: none; border-radius: 9px; padding: 11px 18px; font-weight: 700; cursor: pointer; font-family: inherit; background: var(--buy); color: #04130c; }
+    .resolve-row button:disabled { opacity: .5; cursor: not-allowed; }
+    .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(31,42,61,.5); font-family: 'JetBrains Mono', monospace; }
+    td.name, th.name { font-family: 'Inter', sans-serif; }
+    .num { text-align: right; }
+    .winner-tag { color: var(--buy); font-weight: 700; }
+
+    .danger-card { border-color: rgba(234,57,67,.4); }
+    .danger-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .danger-note { font-size: 12px; color: var(--muted); max-width: 560px; line-height: 1.5; }
+    .reset-btn { background: var(--sell); color: #fff; border: none; border-radius: 9px; padding: 11px 18px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    @media (max-width: 760px) { .pa { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" style="background:linear-gradient(135deg,#f5a623,#7b5cff)">🏆</span>
+      <div>
+        <h1>Prediction Market — Admin</h1>
+        <p class="tagline">best thesis · play money</p>
+      </div>
+    </div>
+    <a class="conn online" href="/predict" style="text-decoration:none;color:var(--accent)">← back to market</a>
+  </header>
+
+  <main class="pa">
+    <section class="card">
+      <h2>Market overview</h2>
+      <div id="stats" class="stats-grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>Resolve market</h2>
+      <div class="resolve-row">
+        <select id="winner-select"></select>
+        <button id="resolve-btn">Declare winner</button>
+      </div>
+      <p class="note" id="resolve-note">Declaring a winner pays 100 pts per winning share and closes trading. This is final.</p>
+    </section>
+
+    <section class="card">
+      <h2>Nominees</h2>
+      <table>
+        <thead><tr><th>#</th><th class="name">Nominee</th><th class="num">Probability</th><th class="num">Shares out</th></tr></thead>
+        <tbody id="nominees"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Traders</h2>
+      <table>
+        <thead><tr><th>#</th><th class="name">Email</th><th class="num">Balance</th><th class="num">Net worth</th></tr></thead>
+        <tbody id="traders"></tbody>
+      </table>
+    </section>
+
+    <section class="card danger-card">
+      <div class="danger-row">
+        <div>
+          <h2 style="margin:0 0 4px;color:var(--sell)">Reset market</h2>
+          <p class="danger-note">Deletes <strong>all trades, balances, and positions</strong> and re-seeds the nominees at 1/N. Use before a fresh launch. Cannot be undone.</p>
+        </div>
+        <button id="reset-btn" class="reset-btn">Reset market</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/js/predict_admin.js"></script>
+</body>
+</html>

@@ -229,6 +229,17 @@ def predict_reset(_: str = Depends(require_admin)) -> dict:
     return predict_service.reset()
 
 
+@app.get("/api/predict/admin/overview")
+def predict_admin_overview(_: str = Depends(require_admin)) -> dict:
+    return predict_service.admin_overview()
+
+
+@app.get("/predict/admin", response_class=HTMLResponse)
+def predict_admin_page(_: str = Depends(require_admin)) -> FileResponse:
+    """Password-protected admin console for the prediction market."""
+    return FileResponse(STATIC_DIR / "predict_admin.html")
+
+
 @app.get("/predict", response_class=HTMLResponse)
 def predict_page() -> FileResponse:
     return FileResponse(STATIC_DIR / "predict.html")
